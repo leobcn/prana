@@ -2,13 +2,13 @@ package sqlmigr_test
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/phogolabs/parcello"
@@ -28,10 +28,11 @@ var _ = Describe("Provider", func() {
 		Expect(err).To(BeNil())
 
 		conn := filepath.Join(dir, "prana.db")
-		db, err := sqlx.Open("sqlite3", conn)
+		db, err := sql.Open("sqlite3", conn)
 		Expect(err).To(BeNil())
 
 		provider = &sqlmigr.Provider{
+			DriverName: "sqlite3",
 			FileSystem: parcello.Dir(dir),
 			DB:         db,
 		}
@@ -107,10 +108,18 @@ var _ = Describe("Provider", func() {
 
 			Expect(provider.Insert(&item)).To(Succeed())
 
-			items := []sqlmigr.Migration{}
+			items := []*sqlmigr.Migration{}
 			query := "SELECT * FROM migrations ORDER BY id ASC"
 
-			Expect(provider.DB.Select(&items, query)).To(Succeed())
+			rows, err := provider.DB.Query(query)
+			Expect(err).To(Succeed())
+
+			for rows.Next() {
+				migration := &sqlmigr.Migration{}
+				Expect(migration.Scan(rows)).To(Succeed())
+				items = append(items, migration)
+			}
+
 			Expect(items).To(HaveLen(2))
 
 			Expect(items[0].ID).To(Equal("20060102150405"))
@@ -145,10 +154,18 @@ var _ = Describe("Provider", func() {
 
 			Expect(provider.Delete(&item)).To(Succeed())
 
-			items := []sqlmigr.Migration{}
+			items := []*sqlmigr.Migration{}
 			query := "SELECT * FROM migrations"
 
-			Expect(provider.DB.Select(&items, query)).To(Succeed())
+			rows, err := provider.DB.Query(query)
+			Expect(err).To(Succeed())
+
+			for rows.Next() {
+				migration := &sqlmigr.Migration{}
+				Expect(migration.Scan(rows)).To(Succeed())
+				items = append(items, migration)
+			}
+
 			Expect(items).To(BeEmpty())
 		})
 

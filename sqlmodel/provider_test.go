@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -19,13 +18,13 @@ import (
 var _ = Describe("PostgreSQLProvider", func() {
 	var (
 		provider *sqlmodel.PostgreSQLProvider
-		db       *sqlx.DB
+		db       *sql.DB
 	)
 
 	BeforeEach(func() {
 		var err error
 
-		db, err = sqlx.Open("postgres", "postgres://localhost/prana?sslmode=disable")
+		db, err = sql.Open("postgres", "postgres://localhost/prana?sslmode=disable")
 		Expect(err).NotTo(HaveOccurred())
 
 		provider = &sqlmodel.PostgreSQLProvider{
@@ -74,7 +73,7 @@ var _ = Describe("PostgreSQLProvider", func() {
 
 		Context("when the database is not available", func() {
 			BeforeEach(func() {
-				db, err := sqlx.Open("postgres", "postgres://localhost/prana?sslmode=disable")
+				db, err := sql.Open("postgres", "postgres://localhost/prana?sslmode=disable")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(db.Close()).To(Succeed())
 				provider.DB = db
@@ -195,7 +194,7 @@ var _ = Describe("PostgreSQLProvider", func() {
 
 		Context("when the database is not available", func() {
 			BeforeEach(func() {
-				db, err := sqlx.Open("postgres", "postgres://localhost/prana?sslmode=disable")
+				db, err := sql.Open("postgres", "postgres://localhost/prana?sslmode=disable")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(db.Close()).To(Succeed())
 				provider.DB = db
@@ -213,7 +212,6 @@ var _ = Describe("PostgreSQLProvider", func() {
 				querier := &fake.Querier{}
 				querier.CloseStub = db.Close
 				querier.QueryRowStub = db.QueryRow
-				querier.RebindStub = db.Rebind
 				querier.QueryStub = func(txt string, args ...interface{}) (*sql.Rows, error) {
 					if strings.Contains(txt, "information_schema.columns") {
 						return nil, fmt.Errorf("oh no!")
@@ -236,13 +234,13 @@ var _ = Describe("PostgreSQLProvider", func() {
 var _ = Describe("MySQLProvider", func() {
 	var (
 		provider *sqlmodel.MySQLProvider
-		db       *sqlx.DB
+		db       *sql.DB
 	)
 
 	BeforeEach(func() {
 		var err error
 
-		db, err = sqlx.Open("mysql", "root@/prana")
+		db, err = sql.Open("mysql", "root@/prana")
 		Expect(err).NotTo(HaveOccurred())
 
 		provider = &sqlmodel.MySQLProvider{
@@ -291,7 +289,7 @@ var _ = Describe("MySQLProvider", func() {
 
 		Context("when the database is not available", func() {
 			BeforeEach(func() {
-				dbb, err := sqlx.Open("mysql", "root@/prana")
+				dbb, err := sql.Open("mysql", "root@/prana")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(dbb.Close()).To(Succeed())
 				provider.DB = dbb
@@ -396,7 +394,7 @@ var _ = Describe("MySQLProvider", func() {
 
 		Context("when the database is not available", func() {
 			BeforeEach(func() {
-				db, err := sqlx.Open("mysql", "root@/prana")
+				db, err := sql.Open("mysql", "root@/prana")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(db.Close()).To(Succeed())
 				provider.DB = db
@@ -414,7 +412,6 @@ var _ = Describe("MySQLProvider", func() {
 				querier := &fake.Querier{}
 				querier.CloseStub = db.Close
 				querier.QueryRowStub = db.QueryRow
-				querier.RebindStub = db.Rebind
 				querier.QueryStub = func(txt string, args ...interface{}) (*sql.Rows, error) {
 					if strings.Contains(txt, "information_schema.table_constraints") {
 						return nil, fmt.Errorf("oh no!")
@@ -437,7 +434,6 @@ var _ = Describe("MySQLProvider", func() {
 				querier := &fake.Querier{}
 				querier.CloseStub = db.Close
 				querier.QueryRowStub = db.QueryRow
-				querier.RebindStub = db.Rebind
 				querier.QueryStub = func(txt string, args ...interface{}) (*sql.Rows, error) {
 					if strings.Contains(txt, "information_schema.columns") {
 						return nil, fmt.Errorf("oh no!")
@@ -460,7 +456,7 @@ var _ = Describe("MySQLProvider", func() {
 var _ = Describe("SQLiteProvider", func() {
 	var (
 		provider *sqlmodel.SQLiteProvider
-		db       *sqlx.DB
+		db       *sql.DB
 	)
 
 	BeforeEach(func() {
@@ -470,7 +466,7 @@ var _ = Describe("SQLiteProvider", func() {
 		Expect(err).To(BeNil())
 
 		conn := filepath.Join(dir, "prana.db")
-		db, err = sqlx.Open("sqlite3", conn)
+		db, err = sql.Open("sqlite3", conn)
 		Expect(err).NotTo(HaveOccurred())
 
 		provider = &sqlmodel.SQLiteProvider{
@@ -523,7 +519,7 @@ var _ = Describe("SQLiteProvider", func() {
 				Expect(err).To(BeNil())
 
 				conn := filepath.Join(dir, "prana.db")
-				db, err := sqlx.Open("sqlite3", conn)
+				db, err := sql.Open("sqlite3", conn)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(db.Close()).To(Succeed())
 
@@ -632,7 +628,7 @@ var _ = Describe("SQLiteProvider", func() {
 				Expect(err).To(BeNil())
 
 				conn := filepath.Join(dir, "prana.db")
-				db, err := sqlx.Open("sqlite3", conn)
+				db, err := sql.Open("sqlite3", conn)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(db.Close()).To(Succeed())
 

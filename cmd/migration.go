@@ -1,13 +1,13 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/jmoiron/sqlx"
 	"github.com/phogolabs/parcello"
 	"github.com/phogolabs/prana/sqlmigr"
 	"github.com/urfave/cli"
@@ -16,7 +16,7 @@ import (
 // SQLMigration provides a subcommands to work with SQL migrations.
 type SQLMigration struct {
 	executor *sqlmigr.Executor
-	db       *sqlx.DB
+	db       *sql.DB
 	dir      string
 }
 
@@ -90,7 +90,7 @@ func (m *SQLMigration) CreateCommand() cli.Command {
 }
 
 func (m *SQLMigration) before(ctx *cli.Context) error {
-	db, err := open(ctx)
+	db, driver, err := open(ctx)
 	if err != nil {
 		return err
 	}
@@ -104,6 +104,7 @@ func (m *SQLMigration) before(ctx *cli.Context) error {
 	m.executor = &sqlmigr.Executor{
 		Logger: log.Log,
 		Provider: &sqlmigr.Provider{
+			DriverName: driver,
 			FileSystem: parcello.Dir(m.dir),
 			DB:         db,
 		},

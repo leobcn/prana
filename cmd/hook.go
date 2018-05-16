@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"os"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/json"
-	"github.com/jmoiron/sqlx"
 	"github.com/phogolabs/prana"
 	"github.com/urfave/cli"
 )
@@ -51,16 +51,16 @@ func BeforeEach(ctx *cli.Context) error {
 	return nil
 }
 
-func open(ctx *cli.Context) (*sqlx.DB, error) {
+func open(ctx *cli.Context) (*sql.DB, string, error) {
 	driver, conn, err := prana.ParseURL(ctx.GlobalString("database-url"))
 	if err != nil {
-		return nil, cli.NewExitError(err.Error(), ErrCodeArg)
+		return nil, "", cli.NewExitError(err.Error(), ErrCodeArg)
 	}
 
-	db, err := sqlx.Open(driver, conn)
+	db, err := sql.Open(driver, conn)
 	if err != nil {
-		return nil, cli.NewExitError(err.Error(), ErrCodeArg)
+		return nil, "", cli.NewExitError(err.Error(), ErrCodeArg)
 	}
 
-	return db, nil
+	return db, driver, nil
 }

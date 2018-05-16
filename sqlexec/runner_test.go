@@ -2,12 +2,12 @@ package sqlexec_test
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/phogolabs/parcello"
@@ -28,10 +28,11 @@ var _ = Describe("Runner", func() {
 		Expect(err).To(BeNil())
 
 		db := filepath.Join(dir, "prana.db")
-		gateway, err := sqlx.Open("sqlite3", db)
+		gateway, err := sql.Open("sqlite3", db)
 		Expect(err).To(BeNil())
 
 		runner = &sqlexec.Runner{
+			DriverName: "sqlite3",
 			FileSystem: parcello.Dir(dir),
 			DB:         gateway,
 		}

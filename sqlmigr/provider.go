@@ -2,12 +2,11 @@ package sqlmigr
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
-
-	"github.com/jmoiron/sqlx"
 )
 
 var _ MigrationProvider = &Provider{}
@@ -16,8 +15,10 @@ var _ MigrationProvider = &Provider{}
 type Provider struct {
 	// FileSystem represents the project directory file system.
 	FileSystem FileSystem
+	// DriverName returns the current driver name
+	DriverName string
 	// DB is a client to underlying database.
-	DB *sqlx.DB
+	DB *sql.DB
 }
 
 // Migrations returns the project migrations.
@@ -97,7 +98,7 @@ func (m *Provider) filter(info os.FileInfo) error {
 
 func (m *Provider) supported(drivers []string) bool {
 	for _, driver := range drivers {
-		if driver == every || driver == m.DB.DriverName() {
+		if driver == every || driver == m.DriverName {
 			return true
 		}
 	}
@@ -111,10 +112,22 @@ func (m *Provider) query() ([]*Migration, error) {
 	query.WriteString("FROM migrations ")
 	query.WriteString("ORDER BY id ASC")
 
+	rows, err := m.DB.Query(query.String())
+	if err != nil {
+		if IsNotExist(err) {
+			err = nil
+		}
+		return []*Migration{}, err
+	}
+
+	defer rows.Close()
+
 	remote := []*Migration{}
 
-	if err := m.DB.Select(&remote, query.String()); err != nil && !IsNotExist(err) {
-		return []*Migration{}, err
+	for rows.Next() {
+		migration := &Migration{}
+		_ = migration.Scan(rows)
+		remote = append(remote, migration)
 	}
 
 	return remote, nil
@@ -128,8 +141,7 @@ func (m *Provider) Insert(item *Migration) error {
 	builder.WriteString("INSERT INTO migrations(id, description, created_at) ")
 	builder.WriteString("VALUES (?, ?, ?)")
 
-	query := m.DB.Rebind(builder.String())
-	if _, err := m.DB.Exec(query, item.ID, item.Description, item.CreatedAt); err != nil {
+	if _, err := m.DB.Exec(builder.String(), item.ID, item.Description, item.CreatedAt); err != nil {
 		return err
 	}
 
@@ -142,8 +154,7 @@ func (m *Provider) Delete(item *Migration) error {
 	builder.WriteString("DELETE FROM migrations ")
 	builder.WriteString("WHERE id = ?")
 
-	query := m.DB.Rebind(builder.String())
-	if _, err := m.DB.Exec(query, item.ID); err != nil {
+	if _, err := m.DB.Exec(builder.String(), item.ID); err != nil {
 		return err
 	}
 
@@ -154,7 +165,7 @@ func (m *Provider) Delete(item *Migration) error {
 func (m *Provider) Exists(item *Migration) bool {
 	count := 0
 
-	if err := m.DB.Get(&count, "SELECT count(id) FROM migrations WHERE id = ?", item.ID); err != nil {
+	if err := m.DB.QueryRow("SELECT count(id) FROM migrations WHERE id = ?", item.ID).Scan(&count); err != nil {
 		return false
 	}
 

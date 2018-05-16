@@ -26,6 +26,12 @@ var (
 // FileSystem provides with primitives to work with the underlying file system
 type FileSystem = parcello.FileSystem
 
+// Row represents a row cursor
+type Row interface {
+	// Scan performs the scanning
+	Scan(fields ...interface{}) error
+}
+
 // MigrationRunner runs or reverts a given sqlmigr item.
 type MigrationRunner interface {
 	// Run runs a given sqlmigr item.
@@ -86,6 +92,17 @@ type Migration struct {
 	CreatedAt time.Time `db:"created_at"`
 	// Drivers return all supported drivers
 	Drivers []string `db:"-"`
+}
+
+// Scan scans a row and populates the struct fields
+func (m *Migration) Scan(row Row) error {
+	fields := []interface{}{
+		&m.ID,
+		&m.Description,
+		&m.CreatedAt,
+	}
+
+	return row.Scan(fields...)
 }
 
 // Filenames return the migration filenames

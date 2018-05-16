@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/apex/log"
-	"github.com/jmoiron/sqlx"
 	"github.com/olekukonko/tablewriter"
 	"github.com/phogolabs/parcello"
 	"github.com/phogolabs/prana/sqlexec"
@@ -139,7 +139,7 @@ func (m *SQLRoutine) run(ctx *cli.Context) error {
 
 	log.Infof("Running command '%s' from '%s'", name, m.dir)
 
-	db, err := open(ctx)
+	db, driver, err := open(ctx)
 	if err != nil {
 		return err
 	}
@@ -151,11 +151,12 @@ func (m *SQLRoutine) run(ctx *cli.Context) error {
 	}()
 
 	runner := &sqlexec.Runner{
+		DriverName: driver,
 		FileSystem: parcello.Dir(m.dir),
 		DB:         db,
 	}
 
-	var rows *sqlx.Rows
+	var rows *sql.Rows
 	rows, err = runner.Run(name, params...)
 
 	if err != nil {
@@ -169,7 +170,7 @@ func (m *SQLRoutine) run(ctx *cli.Context) error {
 	return nil
 }
 
-func (m *SQLRoutine) print(rows *sqlx.Rows) error {
+func (m *SQLRoutine) print(rows *sql.Rows) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	columns, err := rows.Columns()
@@ -180,17 +181,17 @@ func (m *SQLRoutine) print(rows *sqlx.Rows) error {
 	table.SetHeader(columns)
 
 	for rows.Next() {
-		record, err := rows.SliceScan()
-		if err != nil {
-			return err
+		fields := make([]interface{}, len(columns))
+		for index := range fields {
+			fields[index] = new(interface{})
 		}
 
+		if err := rows.Scan(fields...); err != nil {
+			return err
+		}
 		row := []string{}
 
-		for _, column := range record {
-			if data, ok := column.([]byte); ok {
-				column = string(data)
-			}
+		for _, column := range fields {
 			row = append(row, fmt.Sprintf("%v", column))
 		}
 

@@ -1,9 +1,9 @@
 package sqlmigr
 
-import "github.com/jmoiron/sqlx"
+import "database/sql"
 
 // RunAll runs all sqlmigrs
-func RunAll(db *sqlx.DB, fileSystem FileSystem) error {
+func RunAll(db *sql.DB, fileSystem FileSystem) error {
 	executor := &Executor{
 		Provider: &Provider{
 			FileSystem: fileSystem,

@@ -2,12 +2,12 @@ package integration_test
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"os/exec"
 	"path/filepath"
 
-	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -27,7 +27,7 @@ var _ = Describe("Script Sync", func() {
 		fmt.Fprintln(query, "  last_name TEXT")
 		fmt.Fprintln(query, ");")
 
-		db, err := sqlx.Open("sqlite3", filepath.Join(dir, "gom.db"))
+		db, err := sql.Open("sqlite3", filepath.Join(dir, "gom.db"))
 		Expect(err).To(BeNil())
 		_, err = db.Exec(query.String())
 		Expect(err).To(BeNil())

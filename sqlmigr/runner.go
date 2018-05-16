@@ -1,10 +1,10 @@
 package sqlmigr
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/phogolabs/prana/sqlexec"
 )
 
@@ -15,7 +15,7 @@ type Runner struct {
 	// FileSystem represents the project directory file system.
 	FileSystem FileSystem
 	// DB is a client to underlying database.
-	DB *sqlx.DB
+	DB *sql.DB
 }
 
 // Run runs a given migration  item.

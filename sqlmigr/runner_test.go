@@ -2,12 +2,12 @@ package sqlmigr_test
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/phogolabs/parcello"
@@ -30,7 +30,7 @@ var _ = Describe("Runner", func() {
 		Expect(err).To(BeNil())
 
 		conn := filepath.Join(dir, "prana.db")
-		db, err := sqlx.Open("sqlite3", conn)
+		db, err := sql.Open("sqlite3", conn)
 		Expect(err).To(BeNil())
 
 		runner = &sqlmigr.Runner{
@@ -114,7 +114,7 @@ var _ = Describe("Runner", func() {
 			JustBeforeEach(func() {
 				db, m, err := sqlmock.New()
 				Expect(err).NotTo(HaveOccurred())
-				runner.DB = sqlx.NewDb(db, "dummy")
+				runner.DB = db
 
 				mock = m
 				mock.ExpectBegin()

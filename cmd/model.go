@@ -1,13 +1,13 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/jmoiron/sqlx"
 	"github.com/phogolabs/parcello"
 	"github.com/phogolabs/prana/sqlmodel"
 	"github.com/urfave/cli"
@@ -49,7 +49,7 @@ func (m *SQLModel) CreateCommand() cli.Command {
 			},
 			cli.StringFlag{
 				Name:  "orm-tag, m",
-				Usage: "tag tag that is wellknow for some ORM packages. supported: (sqlx, gorm)",
+				Usage: "tag tag that is wellknow for some ORM packages. supported: (sql, gorm)",
 				Value: "sqlx",
 			},
 			cli.StringSliceFlag{
@@ -79,12 +79,12 @@ func (m *SQLModel) CreateCommand() cli.Command {
 }
 
 func (m *SQLModel) before(ctx *cli.Context) error {
-	db, err := open(ctx)
+	db, driver, err := open(ctx)
 	if err != nil {
 		return err
 	}
 
-	provider, err := m.provider(db)
+	provider, err := m.provider(db, driver)
 	if err != nil {
 		return err
 	}
@@ -115,8 +115,8 @@ func (m *SQLModel) before(ctx *cli.Context) error {
 	return nil
 }
 
-func (m *SQLModel) provider(db *sqlx.DB) (sqlmodel.SchemaProvider, error) {
-	switch db.DriverName() {
+func (m *SQLModel) provider(db *sql.DB, driver string) (sqlmodel.SchemaProvider, error) {
+	switch driver {
 	case "sqlite3":
 		return &sqlmodel.SQLiteProvider{DB: db}, nil
 	case "postgres":
@@ -124,7 +124,7 @@ func (m *SQLModel) provider(db *sqlx.DB) (sqlmodel.SchemaProvider, error) {
 	case "mysql":
 		return &sqlmodel.MySQLProvider{DB: db}, nil
 	default:
-		err := fmt.Errorf("Cannot find provider for database driver '%s'", db.DriverName())
+		err := fmt.Errorf("Cannot find provider for database driver '%s'", driver)
 		return nil, cli.NewExitError(err.Error(), ErrCodeArg)
 	}
 }

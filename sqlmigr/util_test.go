@@ -1,11 +1,11 @@
 package sqlmigr_test
 
 import (
+	"database/sql"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -16,7 +16,7 @@ import (
 var _ = Describe("Util", func() {
 	Describe("RunAll", func() {
 		var (
-			db *sqlx.DB
+			db *sql.DB
 			fs sqlmigr.FileSystem
 		)
 
@@ -25,7 +25,7 @@ var _ = Describe("Util", func() {
 			Expect(err).To(BeNil())
 
 			conn := filepath.Join(dir, "prana.db")
-			db, err = sqlx.Open("sqlite3", conn)
+			db, err = sql.Open("sqlite3", conn)
 			Expect(err).To(BeNil())
 
 			fs = parcello.Dir(dir)
